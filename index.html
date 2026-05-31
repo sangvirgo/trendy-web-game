@@ -239,7 +239,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
   <div class="pu-bar" id="pu-bar"></div>
 
-  <div class="enemy-area" id="enemy-area">
+  <div class="enemy-area" id="enemy-area" onclick="G.clickEnemy(event)">
     <div class="enemy-wrap">
       <div class="enemy-sprite" id="e-spr">👹</div>
       <div class="hp-bar"><div class="hp-fill" id="e-hp-fill" style="width:100%"></div></div>
@@ -253,7 +253,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
   <div class="grid-wrap">
     <div class="grid-top">
-      <h3>🎒 Inventory</h3>
+      <h3>🎒 Inventory <span class="grid-count" id="gcnt"></span></h3>
       <div class="grid-btns">
         <button onclick="G.buyNew()">+ Buy 🪙50</button>
         <button onclick="G.autoMerge()">🔄 Merge</button>
@@ -399,6 +399,7 @@ const G={
   },
 
   ensureGrid(){while(S.grid.length<S.gridSize)S.grid.push(null)},
+  addCombo(){const p=S.combo;S.combo++;S.comboTimer=2.5;S.maxCombo=Math.max(S.maxCombo,S.combo);if(S.combo>=50)S.comboMult=5;else if(S.combo>=30)S.comboMult=3;else if(S.combo>=15)S.comboMult=2;else if(S.combo>=5)S.comboMult=1.5;else S.comboMult=1;if((p<5&&S.combo>=5)||(p<15&&S.combo>=15)||(p<30&&S.combo>=30)||(p<50&&S.combo>=50)){FX.banner(S.combo>=50?'⚡ MEGA x5!':S.combo>=30?'💥 x3!':S.combo>=15?'🔥🔥 x2!':'🔥 x1.5!')}},
 
   tick(){
     const now=Date.now(),dt=(now-S.lastTick)/1000;S.lastTick=now;
@@ -412,9 +413,7 @@ const G={
   gather(e){
     SFX.play('click');
     let gain=(1+S.dpsUpLv)*S.prestMult;
-    S.combo++;S.comboTimer=2.5;
-    S.maxCombo=Math.max(S.maxCombo,S.combo);
-    if(S.combo>=5)S.comboMult=1.5;if(S.combo>=15)S.comboMult=2;if(S.combo>=30)S.comboMult=3;if(S.combo>=50)S.comboMult=5;
+    this.addCombo();
     gain*=S.comboMult;if(S.pu.x2gold)gain*=2;gain=Math.floor(gain);
     S.gold+=gain;S.totalGold+=gain;S.lifetimeGold+=gain;
     let cd=S.clickDps*S.dpsMult*S.prestMult*S.comboMult*(S.pu.x2dps?2:1);
@@ -437,8 +436,8 @@ const G={
     this.dealDmg(d);
     FX.dmg(e.clientX,e.clientY,fmt(Math.floor(d)),crit);FX.ptc(e.clientX,e.clientY,crit?'#f97316':'#ef4444',5);
     FX.shake(document.getElementById('e-spr'));FX.flash(document.getElementById('enemy-area'));
-    S.combo++;S.comboTimer=2.5;S.maxCombo=Math.max(S.maxCombo,S.combo);
-    if(S.combo>=5)S.comboMult=1.5;if(S.combo>=15)S.comboMult=2;if(S.combo>=30)S.comboMult=3;if(S.combo>=50)S.comboMult=5;
+    this.addCombo();
+    if(S.enemy){const cg=Math.max(1,Math.floor(S.enemy.gold*S.wave*.005*S.comboMult*(S.pu.x2gold?2:1)));S.gold+=cg;S.totalGold+=cg;S.lifetimeGold+=cg}
     UI.updateCmb();
   },
 
@@ -475,12 +474,12 @@ const G={
 
   spawnEnemy(){
     const i=Math.min(Math.floor((S.wave-1)/2),ENEMIES.length-1);
-    const t=ENEMIES[i],hp=Math.floor(t.hp*(1+(S.wave-1)*.45));
+    const t=ENEMIES[i],hp=Math.floor(t.hp*(1+(S.wave-1)*.4));
     S.enemy={...t};S.eMaxHp=hp;S.eHp=hp;
     UI.updateEnemy();
   },
 
-  recalcDps(){let t=0;for(const c of S.grid)if(c){const i=ITEMS[c.lv-1];if(i)t+=i.dps}S.dps=t*(1+S.dpsUpLv*.1);S.clickDps=Math.max(1,Math.floor(1+t*.1))},
+  recalcDps(){let t=0;for(const c of S.grid)if(c){const i=ITEMS[c.lv-1];if(i)t+=i.dps}S.dps=t*(1+S.dpsUpLv*.1);S.clickDps=Math.max(3,Math.floor(3+t*.2))},
 
   addToGrid(lv){const e=S.grid.findIndex(c=>c===null);if(e!==-1){S.grid[e]={lv};this.recalcDps();UI.renderGrid();return!0}return!1},
 
@@ -552,9 +551,10 @@ const UI={
       const item=S.grid[i];
       if(i===S.sel)c.classList.add('sel');
       if(S.sel>=0&&item&&S.grid[S.sel]&&item.lv===S.grid[S.sel].lv&&i!==S.sel)c.classList.add('merge-ok');
-      if(item){const d=ITEMS[item.lv-1];c.innerHTML=`<div class="item r-${d.rarity}"><div class="item-ic">${d.icon}</div><div class="item-lv">Lv${item.lv}</div></div><div class="sell-overlay" onclick="event.stopPropagation();G.sel=${i};G.sellSelected()">✕</div>`}
+      if(item){const d=ITEMS[item.lv-1];c.innerHTML=`<div class="item r-${d.rarity}"><div class="item-ic">${d.icon}</div><div class="item-lv">Lv${item.lv}</div></div><div class="sell-overlay" onclick="event.stopPropagation();S.sel=${i};G.sellSelected()">✕</div>`}
       c.onclick=()=>G.selectCell(i);gr.appendChild(c);
     }
+    const used=S.grid.filter(cell=>cell!==null).length;const gc=document.getElementById('gcnt');if(gc)gc.textContent=`(${used}/${S.gridSize})`;
   },
 
   updateRes(){
@@ -596,7 +596,7 @@ const UI={
     if(btn)btn.classList.add('on');else document.querySelector('.tab')?.classList.add('on');
     const ct=document.getElementById('tc');
     switch(t){
-      case'stats':ct.innerHTML=`<div class="sr"><span class="sl">Wave</span><span class="sv">${S.wave}</span></div><div class="sr"><span class="sl">Kills</span><span class="sv">${S.kills}</span></div><div class="sr"><span class="sl">Total DPS</span><span class="sv">${fmt(Math.floor(S.dps*S.dpsMult*S.prestMult))}</span></div><div class="sr"><span class="sl">Click Power</span><span class="sv">${fmt(S.clickDps)}</span></div><div class="sr"><span class="sl">Crit</span><span class="sv">${(S.critCh*100).toFixed(0)}%</span></div><div class="sr"><span class="sl">Multi</plier</span><span class="sv">x${(S.dpsMult*S.prestMult).toFixed(2)}</span></div><div class="sr"><span class="sl">Prestige</span><span class="sv">${S.prestige}</span></div><div class="sr"><span class="sl">Lifetime Gold</span><span class="sv">${fmt(S.lifetimeGold)}</span></div><div class="sr"><span class="sl">Grid</span><span class="sv">${S.gridSize} slots</span></div><div class="sr"><span class="sl">Auto Clicks</span><span class="sv">${S.autoClick}/s</span></div><div class="sr"><span class="sl">Max Combo</span><span class="sv">${S.maxCombo}</span></div>`;break;
+      case'stats':ct.innerHTML=`<div class="sr"><span class="sl">Wave</span><span class="sv">${S.wave}</span></div><div class="sr"><span class="sl">Kills</span><span class="sv">${S.kills}</span></div><div class="sr"><span class="sl">Total DPS</span><span class="sv">${fmt(Math.floor(S.dps*S.dpsMult*S.prestMult))}</span></div><div class="sr"><span class="sl">Click Power</span><span class="sv">${fmt(S.clickDps)}</span></div><div class="sr"><span class="sl">Crit</span><span class="sv">${(S.critCh*100).toFixed(0)}%</span></div><div class="sr"><span class="sl">Multiplier</span><span class="sv">x${(S.dpsMult*S.prestMult).toFixed(2)}</span></div><div class="sr"><span class="sl">Prestige</span><span class="sv">${S.prestige}</span></div><div class="sr"><span class="sl">Lifetime Gold</span><span class="sv">${fmt(S.lifetimeGold)}</span></div><div class="sr"><span class="sl">Grid</span><span class="sv">${S.gridSize} slots</span></div><div class="sr"><span class="sl">Auto Clicks</span><span class="sv">${S.autoClick}/s</span></div><div class="sr"><span class="sl">Max Combo</span><span class="sv">${S.maxCombo}</span></div>`;break;
       case'lb':{const l=LB.get();ct.innerHTML=l.length===0?'<p style="color:var(--t2);text-align:center;padding:16px">No scores yet</p>':l.map((e,i)=>`<div class="lb-e"><div class="lb-r ${i===0?'g':i===1?'s':i===2?'b':''}">${i+1}</div><div class="lb-n">${e.n}</div><div class="lb-sc">${fmt(e.s)}</div></div>`).join('')}break;
       case'pre':{const r=G.prestigeReward(),can=G.canPrestige();ct.innerHTML=`<div style="text-align:center;padding:8px 0"><div style="font-size:40px;margin-bottom:10px">🌟</div><p style="color:var(--t2);margin-bottom:12px;font-size:12px">Reset progress for permanent bonuses!</p><div class="sr"><span class="sl">Prestige</span><span class="sv">${S.prestige}</span></div><div class="sr"><span class="sl">Multiplier</span><span class="sv">x${S.prestMult.toFixed(2)}</span></div><div class="sr"><span class="sl">Gems earned</span><span class="sv">💎 ${r}</span></div><div class="sr"><span class="sl">New Multi</span><span class="sv">x${(1+(S.prestige+1)*.25).toFixed(2)}</span></div><button class="p-btn" onclick="G.prestige();UI.closeM()" ${can?'':'disabled'}>${can?'🌟 Prestige!':'🔒 Reach Wave 5'}</button></div>`}break;
       case'ach':{ct.innerHTML=ACHS.map(a=>{const done=S.achDone.includes(a.id);return`<div class="shop-i ${done?'':'no'}"><div class="shop-ic">${a.icon}</div><div class="shop-inf"><div class="shop-nm">${a.name}</div><div class="shop-ds">${a.desc}</div></div><div style="font-size:16px">${done?'✅':'⬜'}</div></div>`}).join('')}break;
