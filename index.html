@@ -178,6 +178,46 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   .enemy-area{height:85px}.enemy-sprite{font-size:34px}.cell{min-height:44px}.item-ic{font-size:20px}.gather-btn{height:46px;font-size:14px}.act-btn{width:46px;height:46px;font-size:20px}
 }
 @media(min-width:768px){#app{max-width:420px;padding:12px;gap:10px}}
+
+/* MERGE ANIMATION */
+@keyframes mergeFlash{0%{background:rgba(52,211,153,.3)}100%{background:var(--glass)}}
+.cell.merged{animation:mergeFlash .4s ease-out}
+
+/* GATHER RIPPLE */
+.gather-btn .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.3);transform:scale(0);animation:ripple .5s ease-out;pointer-events:none}
+@keyframes ripple{to{transform:scale(2.5);opacity:0}}
+
+/* ITEM LEVEL COLORS for cell bg */
+.cell:has(.r-uncommon){border-color:rgba(34,197,94,.15)}
+.cell:has(.r-rare){border-color:rgba(59,130,246,.2)}
+.cell:has(.r-epic){border-color:rgba(168,85,247,.25)}
+.cell:has(.r-legendary){border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.04)}
+.cell:has(.r-mythic){border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.04)}
+
+/* GRID ITEMS COUNTER */
+.grid-count{font-size:10px;color:var(--t2);opacity:.7}
+
+/* GOLD BURST on enemy kill */
+@keyframes goldBurst{0%{transform:scale(0);opacity:1}50%{transform:scale(1.5);opacity:.8}100%{transform:scale(2);opacity:0}}
+.gold-burst{position:fixed;pointer-events:none;font-size:28px;animation:goldBurst .6s ease-out forwards;z-index:55}
+
+/* BETTER DEATH SCREEN */
+.death .death-emoji{font-size:64px;animation:deathPulse 2s ease-in-out infinite}
+@keyframes deathPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+
+/* SMOOTH HP TRANSITION */
+.player-hp-fill{transition:width .3s ease}
+.hp-fill{transition:width .2s ease}
+
+/* COMBO FIRE EFFECT */
+.gather-btn.fire{box-shadow:0 4px 16px rgba(249,115,22,.4),0 0 30px rgba(249,115,22,.2)}
+
+/* ACHIEVEMENT COUNTER */
+.ach-count{position:absolute;top:-4px;right:-4px;background:var(--gold);color:#000;font-size:9px;font-weight:800;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+
+/* NICE SCROLLBAR for modal */
+.modal::-webkit-scrollbar{width:4px}
+.modal::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
 </style>
 </head>
 <body>
@@ -231,7 +271,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 </div>
 
 <div class="modal-bg" id="m-bg" onclick="UI.closeM(event)"><div class="modal" id="m-ct"></div></div>
-<div class="death" id="death"><div class="death-t">💀 GAME OVER</div><div class="death-s" id="d-s"></div><button class="restart" onclick="G.restart()">🔄 Try Again</button></div>
+<div class="death" id="death"><div class="death-emoji">💀</div><div class="death-t">GAME OVER</div><div class="death-s" id="d-s"></div><button class="restart" onclick="G.restart()">🔄 Try Again</button></div>
 <div id="ach-area"></div>
 
 <script>
@@ -382,6 +422,10 @@ const G={
     this.dealDmg(cd);
     const r=e.target.getBoundingClientRect(),x=e.clientX||(r.left+r.width/2),y=e.clientY||(r.top+r.height/2);
     FX.dmg(x,y,'+'+fmt(gain),crit,' gold');FX.ptc(x,y,crit?'#f97316':'#fbbf24',crit?10:5);
+    // Ripple effect
+    const btn=document.getElementById('g-btn');const rp=document.createElement('span');rp.className='ripple';const bx=x-r.left,by=y-r.top;rp.style.left=bx+'px';rp.style.top=by+'px';rp.style.width=rp.style.height='40px';btn.appendChild(rp);setTimeout(()=>rp.remove(),500);
+    // Fire effect on high combo
+    if(S.combo>=15)btn.classList.add('fire');else btn.classList.remove('fire');
     UI.updateCmb();UI.updateRes();
     if(Math.random()<.02)this.spawnPu();
   },
@@ -414,13 +458,15 @@ const G={
     SFX.play('kill');const e=S.enemy;
     let gr=e.gold*S.wave*S.prestMult*(S.pu.x2gold?2:1);gr=Math.floor(gr);
     S.gold+=gr;S.totalGold+=gr;S.lifetimeGold+=gr;S.kills++;
-    // Heal player on kill
-    S.playerHp=Math.min(S.playerMaxHp,S.playerHp+S.playerMaxHp*.1);
+    S.playerHp=Math.min(S.playerMaxHp,S.playerHp+S.playerMaxHp*.12);
     if(S.kills%5===0&&Math.random()<.5){S.gems++;FX.banner('💎 +1 Gem!')}
     if(Math.random()<.3){const l=Math.min(Math.floor(S.wave/3)+1,5);this.addToGrid(l)}
     if(Math.random()<.08)this.spawnPu();
     const ea=document.getElementById('enemy-area'),r=ea.getBoundingClientRect();
-    FX.ptc(r.left+r.width/2,r.top+r.height/2,'#fbbf24',12);
+    FX.ptc(r.left+r.width/2,r.top+r.height/2,'#fbbf24',15);
+    FX.dmg(r.left+r.width/2,r.top,'+'+fmt(gr)+'🪙',false,' gold');
+    // Gold burst emoji
+    const gb=document.createElement('div');gb.className='gold-burst';gb.textContent='🪙';gb.style.left=(r.left+r.width/2-14)+'px';gb.style.top=(r.top+r.height/2-14)+'px';document.body.appendChild(gb);setTimeout(()=>gb.remove(),600);
     const killsInWave=S.kills%10;killsInWave===0?this.nextWave():this.spawnEnemy();
     UI.updateAll();
   },
@@ -444,7 +490,7 @@ const G={
     else{const a=S.grid[S.sel],b=S.grid[i];
       if(a&&b&&a.lv===b.lv&&a.lv<ITEMS.length){
         SFX.play('merge');S.grid[S.sel]=null;S.grid[i]={lv:a.lv+1};S.sel=-1;this.recalcDps();
-        const cell=document.querySelectorAll('.cell')[i];if(cell){const r=cell.getBoundingClientRect();FX.ptc(r.left+r.width/2,r.top+r.height/2,'#34d399',10)}
+        const cell=document.querySelectorAll('.cell')[i];if(cell){const r=cell.getBoundingClientRect();FX.ptc(r.left+r.width/2,r.top+r.height/2,'#34d399',10);cell.classList.add('merged');setTimeout(()=>cell.classList.remove('merged'),400)}
       }else if(!b){S.grid[i]=a;S.grid[S.sel]=null;S.sel=-1}
       else{S.sel=b?i:-1}
       UI.renderGrid()}
