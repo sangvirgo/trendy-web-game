@@ -280,6 +280,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <script>
 // ===== AUDIO =====
 const SFX=()=>{let c=null,e=!0;function g(){c=c||new(window.AudioContext||window.webkitAudioContext)();return c}function p(t){if(!e)return;try{const x=g(),o=x.createOscillator(),v=x.createGain();o.connect(v);v.connect(x.destination);const n=x.currentTime;switch(t){case'click':o.frequency.setValueAtTime(800,n);o.frequency.exponentialRampToValueAtTime(400,n+.08);v.gain.setValueAtTime(.12,n);v.gain.exponentialRampToValueAtTime(.01,n+.08);o.start(n);o.stop(n+.08);break;case'merge':o.type='triangle';o.frequency.setValueAtTime(400,n);o.frequency.exponentialRampToValueAtTime(1200,n+.2);v.gain.setValueAtTime(.18,n);v.gain.exponentialRampToValueAtTime(.01,n+.25);o.start(n);o.stop(n+.25);break;case'hit':o.type='sawtooth';o.frequency.setValueAtTime(200,n);o.frequency.exponentialRampToValueAtTime(60,n+.12);v.gain.setValueAtTime(.1,n);v.gain.exponentialRampToValueAtTime(.01,n+.12);o.start(n);o.stop(n+.12);break;case'kill':o.type='square';o.frequency.setValueAtTime(500,n);o.frequency.exponentialRampToValueAtTime(80,n+.3);v.gain.setValueAtTime(.12,n);v.gain.exponentialRampToValueAtTime(.01,n+.35);o.start(n);o.stop(n+.35);break;case'buy':o.type='sine';o.frequency.setValueAtTime(500,n);o.frequency.setValueAtTime(700,n+.08);o.frequency.setValueAtTime(900,n+.16);v.gain.setValueAtTime(.1,n);v.gain.exponentialRampToValueAtTime(.01,n+.25);o.start(n);o.stop(n+.25);break;case'err':o.type='square';o.frequency.setValueAtTime(180,n);o.frequency.setValueAtTime(130,n+.08);v.gain.setValueAtTime(.08,n);v.gain.exponentialRampToValueAtTime(.01,n+.15);o.start(n);o.stop(n+.15);break;case'pu':o.type='sine';o.frequency.setValueAtTime(400,n);o.frequency.exponentialRampToValueAtTime(1400,n+.25);v.gain.setValueAtTime(.12,n);v.gain.exponentialRampToValueAtTime(.01,n+.3);o.start(n);o.stop(n+.3);break;case'ach':o.type='sine';[523,659,784,1047].forEach((f,i)=>{o.frequency.setValueAtTime(f,n+i*.07)});v.gain.setValueAtTime(.12,n);v.gain.exponentialRampToValueAtTime(.01,n+.4);o.start(n);o.stop(n+.4);break;case'prestige':o.type='sine';[400,500,600,800,1000,1200].forEach((f,i)=>{o.frequency.setValueAtTime(f,n+i*.07)});v.gain.setValueAtTime(.12,n);v.gain.exponentialRampToValueAtTime(.01,n+.5);o.start(n);o.stop(n+.5);break}}catch(e){}}return{play:p,toggle:()=>{e=!e;return e},get on(){return e}}}();
+function vib(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
 
 // ===== DATA =====
 const ITEMS=[
@@ -421,7 +422,7 @@ const G={
   puTick(){const now=Date.now();for(const[k,v]of Object.entries(S.pu))if(now>=v.end)delete S.pu[k];UI.updatePu()},
 
   gather(e){
-    SFX.play('click');
+    SFX.play('click');vib(10);
     let gain=(1+S.dpsUpLv)*S.prestMult;
     this.addCombo();
     gain*=S.comboMult;if(S.pu.x2gold)gain*=2;gain=Math.floor(gain);
@@ -440,7 +441,7 @@ const G={
   },
 
   clickEnemy(e){
-    SFX.play('hit');
+    SFX.play('hit');vib(15);
     let d=S.clickDps*S.dpsMult*S.prestMult*S.comboMult*(S.pu.x2dps?2:1);
     const cc=S.critCh+(S.pu.critup?.5:0),crit=Math.random()<cc;if(crit){d*=S.critMult;FX.screenShake(S.combo>=10?5:3)}
     this.dealDmg(d);
@@ -464,7 +465,7 @@ const G={
   },
 
   killEnemy(){
-    SFX.play('kill');const e=S.enemy;
+    SFX.play('kill');const e=S.enemy;if(e.isBoss)vib(50);
     let gr=e.gold*S.wave*S.prestMult*(S.pu.x2gold?2:1);gr=Math.floor(gr);
     S.gold+=gr;S.totalGold+=gr;S.lifetimeGold+=gr;S.kills++;
     S.playerHp=Math.min(S.playerMaxHp,S.playerHp+S.playerMaxHp*.12);
@@ -473,7 +474,7 @@ const G={
     if(e.isBoss){S.bossKills++;const bg=Math.ceil(S.wave/5);S.gems+=bg;FX.banner('💎 BOSS DOWN! +'+bg+' Gems!');SFX.play('ach')}
     if(Math.random()<.08)this.spawnPu();
     const ea=document.getElementById('enemy-area'),r=ea.getBoundingClientRect();
-    FX.ptc(r.left+r.width/2,r.top+r.height/2,e.isBoss?'#a855f7':'#fbbf24',e.isBoss?25:15);
+    FX.ptc(r.left+r.width/2,r.top+r.height/2,e.isBoss?'#a855f7':'#fbbf24',e.isBoss?30:12);FX.ptc(r.left+r.width/2,r.top+r.height/2,'#ef4444',e.isBoss?20:8);
     FX.dmg(r.left+r.width/2,r.top,'+'+fmt(gr)+'🪙',false,' gold');
     // Gold burst emoji
     const gb=document.createElement('div');gb.className='gold-burst';gb.textContent='🪙';gb.style.left=(r.left+r.width/2-14)+'px';gb.style.top=(r.top+r.height/2-14)+'px';document.body.appendChild(gb);setTimeout(()=>gb.remove(),600);
@@ -481,7 +482,7 @@ const G={
     UI.updateAll();
   },
 
-  nextWave(){S.wave++;SFX.play('pu');FX.banner('⚔️ Wave '+S.wave);if(S.wave%5===0)S.gems+=Math.floor(S.wave/5);this.spawnEnemy();UI.updateBg()},
+  nextWave(){S.wave++;SFX.play('pu');FX.banner('⚔️ Wave '+S.wave);if(S.wave%5===0)S.gems+=Math.floor(S.wave/5);this.spawnEnemy();UI.updateBg();const a=document.getElementById('app');a.style.transition='filter .3s';a.style.filter='brightness(1.4)';setTimeout(()=>a.style.filter='',300)},
 
   spawnEnemy(){
     const k=S.kills%10,isBoss=(k===9)&&S.wave%5===0&&S.wave>0;
@@ -505,7 +506,7 @@ const G={
     else if(S.sel===i){S.sel=-1;UI.renderGrid()}
     else{const a=S.grid[S.sel],b=S.grid[i];
       if(a&&b&&a.lv===b.lv&&a.lv<ITEMS.length){
-        SFX.play('merge');S.grid[S.sel]=null;S.grid[i]={lv:a.lv+1};S.sel=-1;this.recalcDps();
+        SFX.play('merge');vib(30);S.grid[S.sel]=null;S.grid[i]={lv:a.lv+1};S.sel=-1;this.recalcDps();
         const cell=document.querySelectorAll('.cell')[i];if(cell){const r=cell.getBoundingClientRect();FX.ptc(r.left+r.width/2,r.top+r.height/2,'#34d399',10);cell.classList.add('merged');setTimeout(()=>cell.classList.remove('merged'),400)}
       }else if(!b){S.grid[i]=a;S.grid[S.sel]=null;S.sel=-1}
       else{S.sel=b?i:-1}
@@ -550,7 +551,7 @@ const G={
     this.ensureGrid();this.recalcDps();this.spawnEnemy();UI.renderGrid();UI.updateAll();
   },
 
-  die(){document.getElementById('death').classList.add('on');document.getElementById('d-s').innerHTML=`Wave: <b>${S.wave}</b> | Kills: <b>${S.kills}</b><br>Gold earned: <b>${fmt(S.lifetimeGold)}</b><br>Prestige: <b>${S.prestige}</b>`;LB.add('Player',S.wave*1000+S.kills)},
+  die(){document.getElementById('death').classList.add('on');document.getElementById('d-s').innerHTML=`Wave: <b>${S.wave}</b> | Kills: <b>${S.kills}</b><br>Gold earned: <b>${fmt(S.lifetimeGold)}</b><br>Boss kills: <b>${S.bossKills}</b> | Max combo: <b>${S.maxCombo}</b><br>Prestige: <b>${S.prestige}</b>`;LB.add('Player',S.wave*1000+S.kills);vib(100)},
 
   restart(){document.getElementById('death').classList.remove('on');Save.clear();Object.assign(S,{gold:0,gems:0,totalGold:0,wave:1,kills:0,grid:[],gridSize:20,sel:-1,dps:0,clickDps:1,dpsMult:1,critCh:.05,critMult:2,combo:0,comboTimer:0,comboMult:1,maxCombo:0,enemy:null,eMaxHp:0,eHp:0,pu:{},dpsUpLv:0,gridUp:0,critUp:0,autoClick:0,prestige:S.prestige,prestMult:S.prestMult,lifetimeGold:S.lifetimeGold,playerHp:100,playerMaxHp:100,lastDmgTime:0,achDone:S.achDone,bossKills:S.bossKills,lastTick:Date.now()});this.ensureGrid();this.recalcDps();this.spawnEnemy();UI.renderGrid();UI.updateAll()},
 
