@@ -378,7 +378,7 @@ const LB={
 
 // ===== FX =====
 const FX={
-  ptc(x,y,c='#7c3aed',n=6){for(let i=0;i<n;i++){const p=document.createElement('div');p.className='ptc';p.style.left=x+'px';p.style.top=y+'px';p.style.background=c;const a=(Math.PI*2*i)/n+Math.random()*.4;const d=25+Math.random()*35;p.style.setProperty('--dx',Math.cos(a)*d+'px');p.style.setProperty('--dy',Math.sin(a)*d+'px');document.body.appendChild(p);setTimeout(()=>p.remove(),700)}},
+  ptc(x,y,c='#7c3aed',n=6){if(document.querySelectorAll('.ptc').length>40)n=Math.max(1,Math.floor(n/2));for(let i=0;i<n;i++){const p=document.createElement('div');p.className='ptc';p.style.left=x+'px';p.style.top=y+'px';p.style.background=c;const a=(Math.PI*2*i)/n+Math.random()*.4;const d=25+Math.random()*35;p.style.setProperty('--dx',Math.cos(a)*d+'px');p.style.setProperty('--dy',Math.sin(a)*d+'px');document.body.appendChild(p);setTimeout(()=>p.remove(),700)}},
   dmg(x,y,t,crit=!1,cls=''){const d=document.createElement('div');d.className='fd'+(crit?' crit':'')+cls;d.textContent=t;d.style.left=(x-15)+'px';d.style.top=(y-15)+'px';document.body.appendChild(d);setTimeout(()=>d.remove(),1000)},
   banner(t){const b=document.createElement('div');b.className='wave-bn';b.textContent=t;document.body.appendChild(b);setTimeout(()=>b.remove(),2000)},
   ach(ic,name,sub){const a=document.createElement('div');a.className='ach-popup';a.innerHTML=`<span class="ach-ic">${ic}</span><div><div class="ach-txt">${name}</div><div class="ach-sub">${sub}</div></div>`;document.getElementById('ach-area').appendChild(a);SFX.play('ach');setTimeout(()=>a.remove(),3000)},
@@ -471,7 +471,7 @@ const G={
     S.playerHp=Math.min(S.playerMaxHp,S.playerHp+S.playerMaxHp*.12);
     if(S.kills%5===0&&Math.random()<.5){S.gems++;FX.banner('💎 +1 Gem!')}
     if(e.isBoss||Math.random()<.3){const l=e.isBoss?Math.min(Math.floor(S.wave/2)+2,ITEMS.length):Math.min(Math.floor(S.wave/3)+1,5);this.addToGrid(l)}
-    if(e.isBoss){S.bossKills++;const bg=Math.ceil(S.wave/5);S.gems+=bg;FX.banner('💎 BOSS DOWN! +'+bg+' Gems!');SFX.play('ach')}
+    if(e.isBoss){S.bossKills++;const bg=Math.ceil(S.wave/5);S.gems+=bg;FX.banner('💎 BOSS DOWN! +'+bg+' Gems!');SFX.play('ach');Save.save()}
     if(Math.random()<.08)this.spawnPu();
     const ea=document.getElementById('enemy-area'),r=ea.getBoundingClientRect();
     FX.ptc(r.left+r.width/2,r.top+r.height/2,e.isBoss?'#a855f7':'#fbbf24',e.isBoss?30:12);FX.ptc(r.left+r.width/2,r.top+r.height/2,'#ef4444',e.isBoss?20:8);
@@ -482,7 +482,7 @@ const G={
     UI.updateAll();
   },
 
-  nextWave(){S.wave++;SFX.play('pu');FX.banner('⚔️ Wave '+S.wave);if(S.wave%5===0)S.gems+=Math.floor(S.wave/5);this.spawnEnemy();UI.updateBg();const a=document.getElementById('app');a.style.transition='filter .3s';a.style.filter='brightness(1.4)';setTimeout(()=>a.style.filter='',300)},
+  nextWave(){S.wave++;SFX.play('pu');FX.banner('⚔️ Wave '+S.wave);if(S.wave%5===0)S.gems+=Math.floor(S.wave/5);this.spawnEnemy();UI.updateBg();const a=document.getElementById('app');a.style.transition='filter .3s';a.style.filter='brightness(1.4)';setTimeout(()=>a.style.filter='',300);Save.save()},
 
   spawnEnemy(){
     const k=S.kills%10,isBoss=(k===9)&&S.wave%5===0&&S.wave>0;
@@ -515,7 +515,7 @@ const G={
 
   autoMerge(){let m=!1;for(let lv=ITEMS.length-1;lv>=1;lv--){const cs=[];for(let i=0;i<S.grid.length;i++)if(S.grid[i]&&S.grid[i].lv===lv)cs.push(i);for(let i=0;i+1<cs.length;i+=2){S.grid[cs[i]]=null;S.grid[cs[i+1]]={lv:lv+1};m=!0}}if(m){SFX.play('merge');this.recalcDps();UI.renderGrid()}},
 
-  buyNew(){if(S.gold>=50){S.gold-=50;if(!this.addToGrid(1)){SFX.play('err');S.gold+=50}else{SFX.play('buy');UI.updateRes()}}else SFX.play('err')},
+  buyNew(){if(S.gold>=50){S.gold-=50;if(!this.addToGrid(1)){SFX.play('err');S.gold+=50;FX.banner('📦 Grid Full!')}else{SFX.play('buy');UI.updateRes()}}else SFX.play('err')},
 
   sellSelected(){
     if(S.sel<0||!S.grid[S.sel])return SFX.play('err');
@@ -548,7 +548,7 @@ const G={
     SFX.play('prestige');S.prestige++;S.prestMult=1+S.prestige*.25;S.gems+=r;
     S.gold=0;S.totalGold=0;S.wave=1;S.kills=0;S.grid=new Array(S.gridSize).fill(null);
     S.dpsUpLv=0;S.critUp=0;S.critCh=.05;S.pu={};S.combo=0;S.comboMult=1;S.playerHp=100;
-    this.ensureGrid();this.recalcDps();this.spawnEnemy();UI.renderGrid();UI.updateAll();
+    this.ensureGrid();this.recalcDps();this.spawnEnemy();UI.renderGrid();UI.updateAll();Save.save();
   },
 
   die(){document.getElementById('death').classList.add('on');document.getElementById('d-s').innerHTML=`Wave: <b>${S.wave}</b> | Kills: <b>${S.kills}</b><br>Gold earned: <b>${fmt(S.lifetimeGold)}</b><br>Boss kills: <b>${S.bossKills}</b> | Max combo: <b>${S.maxCombo}</b><br>Prestige: <b>${S.prestige}</b>`;LB.add('Player',S.wave*1000+S.kills);vib(100)},
@@ -619,7 +619,7 @@ const UI={
     switch(t){
       case'stats':ct.innerHTML=`<div class="sr"><span class="sl">Wave</span><span class="sv">${S.wave}</span></div><div class="sr"><span class="sl">Kills</span><span class="sv">${S.kills}</span></div><div class="sr"><span class="sl">Total DPS</span><span class="sv">${fmt(Math.floor(S.dps*S.dpsMult*S.prestMult))}</span></div><div class="sr"><span class="sl">Click Power</span><span class="sv">${fmt(S.clickDps)}</span></div><div class="sr"><span class="sl">Crit</span><span class="sv">${(S.critCh*100).toFixed(0)}%</span></div><div class="sr"><span class="sl">Multiplier</span><span class="sv">x${(S.dpsMult*S.prestMult).toFixed(2)}</span></div><div class="sr"><span class="sl">Prestige</span><span class="sv">${S.prestige}</span></div><div class="sr"><span class="sl">Lifetime Gold</span><span class="sv">${fmt(S.lifetimeGold)}</span></div><div class="sr"><span class="sl">Grid</span><span class="sv">${S.gridSize} slots</span></div><div class="sr"><span class="sl">Auto Clicks</span><span class="sv">${S.autoClick}/s</span></div><div class="sr"><span class="sl">Max Combo</span><span class="sv">${S.maxCombo}</span></div><div class="sr"><span class="sl">Boss Kills</span><span class="sv">${S.bossKills}</span></div>`;break;
       case'lb':{const l=LB.get();ct.innerHTML=l.length===0?'<p style="color:var(--t2);text-align:center;padding:16px">No scores yet</p>':l.map((e,i)=>`<div class="lb-e"><div class="lb-r ${i===0?'g':i===1?'s':i===2?'b':''}">${i+1}</div><div class="lb-n">${e.n}</div><div class="lb-sc">${fmt(e.s)}</div></div>`).join('')}break;
-      case'pre':{const r=G.prestigeReward(),can=G.canPrestige();ct.innerHTML=`<div style="text-align:center;padding:8px 0"><div style="font-size:40px;margin-bottom:10px">🌟</div><p style="color:var(--t2);margin-bottom:12px;font-size:12px">Reset progress for permanent bonuses!</p><div class="sr"><span class="sl">Prestige</span><span class="sv">${S.prestige}</span></div><div class="sr"><span class="sl">Multiplier</span><span class="sv">x${S.prestMult.toFixed(2)}</span></div><div class="sr"><span class="sl">Gems earned</span><span class="sv">💎 ${r}</span></div><div class="sr"><span class="sl">New Multi</span><span class="sv">x${(1+(S.prestige+1)*.25).toFixed(2)}</span></div><button class="p-btn" onclick="G.prestige();UI.closeM()" ${can?'':'disabled'}>${can?'🌟 Prestige!':'🔒 Reach Wave 5'}</button></div>`}break;
+      case'pre':{const r=G.prestigeReward(),can=G.canPrestige();ct.innerHTML=`<div style="text-align:center;padding:8px 0"><div style="font-size:40px;margin-bottom:10px">🌟</div><p style="color:var(--t2);margin-bottom:12px;font-size:12px">Reset progress for permanent bonuses!<br><span style="font-size:10px;opacity:.7">Keeps: Gems, Prestige, Achievements, Boss Kills</span></p><div class="sr"><span class="sl">Prestige</span><span class="sv">${S.prestige}</span></div><div class="sr"><span class="sl">Multiplier</span><span class="sv">x${S.prestMult.toFixed(2)}</span></div><div class="sr"><span class="sl">Gems earned</span><span class="sv">💎 ${r}</span></div><div class="sr"><span class="sl">New Multi</span><span class="sv">x${(1+(S.prestige+1)*.25).toFixed(2)}</span></div><button class="p-btn" onclick="G.prestige();UI.closeM()" ${can?'':'disabled'}>${can?'🌟 Prestige!':'🔒 Reach Wave 5'}</button></div>`}break;
       case'ach':{ct.innerHTML=ACHS.map(a=>{const done=S.achDone.includes(a.id);return`<div class="shop-i ${done?'':'no'}"><div class="shop-ic">${a.icon}</div><div class="shop-inf"><div class="shop-nm">${a.name}</div><div class="shop-ds">${a.desc}</div></div><div style="font-size:16px">${done?'✅':'⬜'}</div></div>`}).join('')}break;
       case'set':ct.innerHTML=`<div class="st-row"><span>🔊 Sound</span><button class="tgl ${SFX.on?'on':''}" onclick="SFX.toggle();this.classList.toggle('on')"></button></div><div class="st-row"><span>💾 Save</span><button class="act-btn" style="width:auto;height:auto;padding:5px 10px;font-size:11px" onclick="G.save();this.textContent='✅'">Save</button></div><div class="st-row"><span>🗑️ Reset</span><button class="act-btn" style="width:auto;height:auto;padding:5px 10px;font-size:11px;background:rgba(239,68,68,.15)" onclick="if(confirm('Reset ALL?')){Save.clear();location.reload()}">Reset</button></div>`;break;
       case'help':ct.innerHTML='<div style="font-size:12px;line-height:1.8;color:var(--t2)"><p><b style="color:var(--t1)">🎮 How to Play</b></p><p>⛏️ <b>Gather</b> — Click purple button for gold + damage</p><p>🎯 <b>Click Enemy</b> — Tap enemy for direct damage (builds combo!)</p><p>🔄 <b>Merge</b> — Tap two same-level items to combine them</p><p>⚔️ <b>DPS</b> — Items auto-damage enemies every second</p><p>🔥 <b>Combo</b> — Keep clicking to build multiplier (x1.5→x2→x3→x5)</p><p>💀 <b>Bosses</b> — Every 5th wave has a boss with 3x HP + bonus loot!</p><p>🌟 <b>Prestige</b> — Reset at Wave 5+ for permanent bonuses</p><p>💎 <b>Gems</b> — Earn from bosses/waves for powerful upgrades</p><p style="margin-top:8px;color:var(--accent)">💡 Tip: Click enemy to build combo, then gather for max gold!</p></div>';break;
