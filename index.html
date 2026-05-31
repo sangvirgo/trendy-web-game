@@ -339,7 +339,14 @@ const FX={
 // ===== GAME =====
 const G={
   init(){
-    Save.load();this.ensureGrid();this.spawnEnemy();this.recalcDps();
+    Save.load();this.ensureGrid();
+    // Give starting items if new game
+    if(S.kills===0&&S.gold===0&&S.grid.every(c=>c===null)){
+      S.grid[0]={lv:1};S.grid[1]={lv:1};S.grid[2]={lv:1};S.gold=20;
+      setTimeout(()=>FX.banner('⚔️ Merge & Survive!'),500);
+      setTimeout(()=>FX.banner('Tap items to merge!'),2500);
+    }
+    this.spawnEnemy();this.recalcDps();
     UI.renderGrid();UI.updateAll();
     setInterval(()=>this.tick(),100);
     setInterval(()=>Save.save(),5000);
@@ -347,10 +354,8 @@ const G={
     setInterval(()=>{if(S.pu.automerge)this.autoMerge()},1000);
     setInterval(()=>{if(S.autoClick>0&&S.enemy)for(let i=0;i<S.autoClick;i++)this.dealDmg(S.clickDps*S.dpsMult*S.prestMult)},1000);
     setInterval(()=>this.checkAch(),2000);
-    // Enemy attacks player
-    setInterval(()=>this.enemyAttack(),1500);
-    // Player HP regen
-    setInterval(()=>{if(S.playerHp<S.playerMaxHp){S.playerHp=Math.min(S.playerMaxHp,S.playerHp+S.playerMaxHp*.02);UI.updateHp()}},1000);
+    setInterval(()=>this.enemyAttack(),1800);
+    setInterval(()=>{if(S.playerHp<S.playerMaxHp){S.playerHp=Math.min(S.playerMaxHp,S.playerHp+S.playerMaxHp*.03);UI.updateHp()}},1000);
   },
 
   ensureGrid(){while(S.grid.length<S.gridSize)S.grid.push(null)},
@@ -396,10 +401,11 @@ const G={
   dealDmg(d){if(!S.enemy)return;S.eHp-=d;if(S.eHp<=0)this.killEnemy();UI.updateEnemy()},
 
   enemyAttack(){
-    if(!S.enemy)return;
+    if(!S.enemy||S.playerHp<=0)return;
     const now=Date.now();if(now-S.lastDmgTime<2000)return;
-    const dmg=Math.max(1,Math.floor(S.enemy.gold*.1*(1+(S.wave-1)*.1)));
-    S.playerHp=Math.max(0,S.playerHp-dmg);S.lastDmgTime=now;
+    // Scale damage: early waves do very little, later waves more
+    const baseDmg=Math.max(1,Math.floor(S.enemy.gold*.05*(1+S.wave*.05)));
+    S.playerHp=Math.max(0,S.playerHp-baseDmg);S.lastDmgTime=now;
     UI.updateHp();
     if(S.playerHp<=0)G.die();
   },
