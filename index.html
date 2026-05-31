@@ -63,7 +63,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .grid-btns button:hover{background:rgba(255,255,255,.1)}
 .grid-btns button:active{transform:scale(.95)}
 .merge-grid{flex:1;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(4,1fr);gap:4px;min-height:0}
-.cell{background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--glass-b);border-radius:10px;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;transition:all .15s;min-height:54px;overflow:hidden;-webkit-tap-highlight-color:transparent}
+.cell{background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--glass-b);border-radius:10px;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;transition:all .15s;min-height:58px;overflow:hidden;-webkit-tap-highlight-color:transparent}
 .cell:hover{border-color:rgba(124,58,237,.25);background:rgba(255,255,255,.06)}
 .cell.sel{border-color:var(--accent);box-shadow:0 0 12px var(--accent-g),inset 0 0 12px var(--accent-g)}
 .cell.merge-ok{border-color:var(--gem);box-shadow:0 0 12px rgba(52,211,153,.35);animation:pulse .8s ease-in-out infinite}
@@ -84,6 +84,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 @keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 .gather-btn:active{transform:scale(.95);box-shadow:0 2px 8px var(--accent-g)}
 .gather-btn .combo-txt{position:absolute;top:3px;right:7px;font-size:10px;opacity:.9}
+.combo-bar{width:100%;height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;flex-shrink:0}
+.combo-fill{height:100%;background:linear-gradient(90deg,var(--combo),#f59e0b);transition:width .1s linear;border-radius:2px}
 .act-btn{width:56px;height:56px;border:none;border-radius:14px;font-size:24px;cursor:pointer;background:var(--glass);backdrop-filter:blur(20px);border:1px solid var(--glass-b);transition:all .2s;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
 .act-btn:hover{background:rgba(255,255,255,.1);transform:scale(1.05)}
 .act-btn:active{transform:scale(.95)}
@@ -178,7 +180,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
 /* RESPONSIVE */
 @media(max-height:600px){
-  .enemy-area{height:85px}.enemy-sprite{font-size:34px}.cell{min-height:44px}.item-ic{font-size:20px}.gather-btn{height:46px;font-size:14px}.act-btn{width:46px;height:46px;font-size:20px}
+  .enemy-area{height:85px}.enemy-sprite{font-size:34px}.cell{min-height:48px}.item-ic{font-size:20px}.gather-btn{height:46px;font-size:14px}.act-btn{width:46px;height:46px;font-size:20px}
 }
 @media(min-width:768px){#app{max-width:420px;padding:12px;gap:10px}}
 
@@ -266,6 +268,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="merge-grid" id="grid"></div>
   </div>
 
+  <div class="combo-bar"><div class="combo-fill" id="cmb-fill" style="width:0%"></div></div>
   <div class="bottom">
     <button class="gather-btn" id="g-btn" onclick="G.gather(event)">⛏️ Gather<span class="combo-txt" id="cmb"></span></button>
     <button class="act-btn" onclick="UI.modal('shop')">🏪</button>
@@ -597,7 +600,7 @@ const UI={
 
   updateHp(){document.getElementById('php-fill').style.width=(S.playerHp/S.playerMaxHp*100)+'%'},
 
-  updateCmb(){const el=document.getElementById('cmb');if(S.combo>=5)el.textContent=`🔥 x${S.comboMult.toFixed(1)} (${S.combo})`;else if(S.combo>0)el.textContent=` ${S.combo}`;else el.textContent=''},
+  updateCmb(){const el=document.getElementById('cmb');if(S.combo>=5)el.textContent=`🔥 x${S.comboMult.toFixed(1)} (${S.combo})`;else if(S.combo>0)el.textContent=` ${S.combo}`;else el.textContent='';const fill=document.getElementById('cmb-fill');if(fill)fill.style.width=(S.comboTimer/2.5*100)+'%'},
 
   updatePu(){const bar=document.getElementById('pu-bar');bar.innerHTML='';const now=Date.now();for(const[k,v]of Object.entries(S.pu)){const rem=Math.max(0,Math.ceil((v.end-now)/1000));const t=PU_TYPES.find(p=>p.id===k);if(t&&rem>0){const d=document.createElement('div');d.className='pu-tag';d.innerHTML=`${t.name} <span class="tm">${rem}s</span>`;bar.appendChild(d)}}},
 
