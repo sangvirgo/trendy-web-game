@@ -172,8 +172,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .ach-popup .ach-ic{font-size:24px}.ach-popup .ach-txt{font-size:12px;font-weight:600}.ach-popup .ach-sub{font-size:10px;color:var(--t2)}
 
 /* SELL BTN */
-.sell-overlay{position:absolute;bottom:2px;right:2px;width:16px;height:16px;background:rgba(239,68,68,.7);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;cursor:pointer;opacity:0;transition:opacity .2s;z-index:2}
-.cell:hover .sell-overlay{opacity:1}
+.sell-overlay{position:absolute;bottom:2px;right:2px;width:22px;height:22px;background:rgba(239,68,68,.75);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;opacity:.6;transition:opacity .2s;z-index:2}
+.cell:hover .sell-overlay,.cell:active .sell-overlay{opacity:1}
 
 /* SCROLLBAR */
 ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px}
@@ -398,7 +398,9 @@ const G={
     if(S.kills===0&&S.gold===0&&S.grid.every(c=>c===null)){
       S.grid[0]={lv:1};S.grid[1]={lv:1};S.grid[2]={lv:1};S.gold=20;
       setTimeout(()=>FX.banner('⚔️ Merge & Survive!'),500);
-      setTimeout(()=>FX.banner('Tap items to merge!'),2500);
+      setTimeout(()=>FX.banner('Tap two same items to merge!'),2500);
+      setTimeout(()=>FX.banner('⛏️ Gather = gold + damage'),4500);
+      setTimeout(()=>FX.banner('🎯 Tap enemy for combos!'),6500);
     }
     this.spawnEnemy();this.recalcDps();
     UI.renderGrid();UI.updateAll();UI.updateBg();
@@ -409,7 +411,7 @@ const G={
     setInterval(()=>{if(S.autoClick>0&&S.enemy){for(let i=0;i<S.autoClick;i++)this.dealDmg(S.clickDps*S.dpsMult*S.prestMult);const ag=Math.max(1,Math.floor((1+S.dpsUpLv)*S.prestMult*S.autoClick*.5));S.gold+=ag;S.totalGold+=ag;S.lifetimeGold+=ag}},1000);
     setInterval(()=>this.checkAch(),2000);
     setInterval(()=>this.enemyAttack(),1800);
-    setInterval(()=>{if(S.playerHp<S.playerMaxHp){S.playerHp=Math.min(S.playerMaxHp,S.playerHp+S.playerMaxHp*.03);UI.updateHp()}},1000);
+    setInterval(()=>{if(S.playerHp<S.playerMaxHp){S.playerHp=Math.min(S.playerMaxHp,S.playerHp+S.playerMaxHp*.05);UI.updateHp()}},1000);
   },
 
   ensureGrid(){while(S.grid.length<S.gridSize)S.grid.push(null)},
@@ -426,7 +428,7 @@ const G={
 
   gather(e){
     SFX.play('click');vib(10);
-    let gain=(1+S.dpsUpLv)*S.prestMult;
+    let gain=(2+S.dpsUpLv*2)*S.prestMult;
     this.addCombo();
     gain*=S.comboMult;if(S.pu.x2gold)gain*=2;gain=Math.floor(gain);
     S.gold+=gain;S.totalGold+=gain;S.lifetimeGold+=gain;
@@ -461,7 +463,7 @@ const G={
     if(!S.enemy||S.playerHp<=0)return;
     const now=Date.now();if(now-S.lastDmgTime<2000)return;
     // Scale damage: early waves do very little, later waves more
-    const baseDmg=Math.max(1,Math.floor(S.enemy.gold*.05*(1+S.wave*.05)));
+    const baseDmg=Math.max(1,Math.floor(1+S.wave*1.5));
     S.playerHp=Math.max(0,S.playerHp-baseDmg);S.lastDmgTime=now;
     UI.updateHp();
     if(S.playerHp<=0)G.die();
@@ -545,7 +547,7 @@ const G={
   },
 
   canPrestige(){return S.wave>=5},
-  prestigeReward(){return Math.floor(Math.sqrt(S.lifetimeGold/1000))},
+  prestigeReward(){return Math.max(1,Math.floor(Math.sqrt(S.lifetimeGold/500)))},
   prestige(){
     if(!this.canPrestige())return;const r=this.prestigeReward();if(r<=0)return;
     SFX.play('prestige');S.prestige++;S.prestMult=1+S.prestige*.25;S.gems+=r;
@@ -556,7 +558,7 @@ const G={
 
   die(){document.getElementById('death').classList.add('on');document.getElementById('d-s').innerHTML=`Wave: <b>${S.wave}</b> | Kills: <b>${S.kills}</b><br>Gold earned: <b>${fmt(S.lifetimeGold)}</b><br>Boss kills: <b>${S.bossKills}</b> | Max combo: <b>${S.maxCombo}</b><br>Prestige: <b>${S.prestige}</b>`;LB.add('Player',S.wave*1000+S.kills);vib(100)},
 
-  restart(){document.getElementById('death').classList.remove('on');Save.clear();Object.assign(S,{gold:0,gems:0,totalGold:0,wave:1,kills:0,grid:[],gridSize:20,sel:-1,dps:0,clickDps:1,dpsMult:1,critCh:.05,critMult:2,combo:0,comboTimer:0,comboMult:1,maxCombo:0,enemy:null,eMaxHp:0,eHp:0,pu:{},dpsUpLv:0,gridUp:0,critUp:0,autoClick:0,prestige:S.prestige,prestMult:S.prestMult,lifetimeGold:S.lifetimeGold,playerHp:100,playerMaxHp:100,lastDmgTime:0,achDone:S.achDone,bossKills:S.bossKills,lastTick:Date.now()});this.ensureGrid();this.recalcDps();this.spawnEnemy();UI.renderGrid();UI.updateAll()},
+  restart(){document.getElementById('death').classList.remove('on');Save.clear();const _g=S.gems,_gs=S.gridSize,_gu=S.gridUp,_au=S.autoClick,_cu=S.critUp,_cc=S.critCh;Object.assign(S,{gold:0,gems:_g,totalGold:0,wave:1,kills:0,grid:[],gridSize:_gs,sel:-1,dps:0,clickDps:1,dpsMult:1,critCh:_cc,critMult:2,combo:0,comboTimer:0,comboMult:1,maxCombo:0,enemy:null,eMaxHp:0,eHp:0,pu:{},dpsUpLv:0,gridUp:_gu,critUp:_cu,autoClick:_au,prestige:S.prestige,prestMult:S.prestMult,lifetimeGold:S.lifetimeGold,playerHp:100,playerMaxHp:100,lastDmgTime:0,achDone:S.achDone,bossKills:S.bossKills,lastTick:Date.now()});this.ensureGrid();S.grid[0]={lv:1};S.grid[1]={lv:1};S.grid[2]={lv:1};S.gold=20;this.recalcDps();this.spawnEnemy();UI.renderGrid();UI.updateAll();FX.banner('⚔️ Back in the fight!')},
 
   checkAch(){for(const a of ACHS)if(!S.achDone.includes(a.id)&&a.check()){S.achDone.push(a.id);FX.ach(a.icon,a.name,a.desc);SFX.play('ach')}},
 
