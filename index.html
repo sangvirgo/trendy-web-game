@@ -62,7 +62,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .grid-btns button{padding:3px 8px;font-size:10px;background:var(--glass);border:1px solid var(--glass-b);color:var(--t1);border-radius:7px;cursor:pointer;transition:all .2s}
 .grid-btns button:hover{background:rgba(255,255,255,.1)}
 .grid-btns button:active{transform:scale(.95)}
-.merge-grid{flex:1;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(4,1fr);gap:4px;min-height:0}
+.merge-grid{flex:1;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(4,1fr);grid-auto-rows:1fr;gap:4px;min-height:0}
 .cell{background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--glass-b);border-radius:10px;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;transition:all .15s;min-height:58px;overflow:hidden;-webkit-tap-highlight-color:transparent}
 .cell:hover{border-color:rgba(124,58,237,.25);background:rgba(255,255,255,.06)}
 .cell.sel{border-color:var(--accent);box-shadow:0 0 12px var(--accent-g),inset 0 0 12px var(--accent-g)}
@@ -282,7 +282,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
 <script>
 // ===== AUDIO =====
-const SFX=()=>{let c=null,e=!0;function g(){c=c||new(window.AudioContext||window.webkitAudioContext)();return c}function p(t){if(!e)return;try{const x=g(),o=x.createOscillator(),v=x.createGain();o.connect(v);v.connect(x.destination);const n=x.currentTime;switch(t){case'click':o.frequency.setValueAtTime(800,n);o.frequency.exponentialRampToValueAtTime(400,n+.08);v.gain.setValueAtTime(.12,n);v.gain.exponentialRampToValueAtTime(.01,n+.08);o.start(n);o.stop(n+.08);break;case'merge':o.type='triangle';o.frequency.setValueAtTime(400,n);o.frequency.exponentialRampToValueAtTime(1200,n+.2);v.gain.setValueAtTime(.18,n);v.gain.exponentialRampToValueAtTime(.01,n+.25);o.start(n);o.stop(n+.25);break;case'hit':o.type='sawtooth';o.frequency.setValueAtTime(200,n);o.frequency.exponentialRampToValueAtTime(60,n+.12);v.gain.setValueAtTime(.1,n);v.gain.exponentialRampToValueAtTime(.01,n+.12);o.start(n);o.stop(n+.12);break;case'kill':o.type='square';o.frequency.setValueAtTime(500,n);o.frequency.exponentialRampToValueAtTime(80,n+.3);v.gain.setValueAtTime(.12,n);v.gain.exponentialRampToValueAtTime(.01,n+.35);o.start(n);o.stop(n+.35);break;case'buy':o.type='sine';o.frequency.setValueAtTime(500,n);o.frequency.setValueAtTime(700,n+.08);o.frequency.setValueAtTime(900,n+.16);v.gain.setValueAtTime(.1,n);v.gain.exponentialRampToValueAtTime(.01,n+.25);o.start(n);o.stop(n+.25);break;case'err':o.type='square';o.frequency.setValueAtTime(180,n);o.frequency.setValueAtTime(130,n+.08);v.gain.setValueAtTime(.08,n);v.gain.exponentialRampToValueAtTime(.01,n+.15);o.start(n);o.stop(n+.15);break;case'pu':o.type='sine';o.frequency.setValueAtTime(400,n);o.frequency.exponentialRampToValueAtTime(1400,n+.25);v.gain.setValueAtTime(.12,n);v.gain.exponentialRampToValueAtTime(.01,n+.3);o.start(n);o.stop(n+.3);break;case'ach':o.type='sine';[523,659,784,1047].forEach((f,i)=>{o.frequency.setValueAtTime(f,n+i*.07)});v.gain.setValueAtTime(.12,n);v.gain.exponentialRampToValueAtTime(.01,n+.4);o.start(n);o.stop(n+.4);break;case'prestige':o.type='sine';[400,500,600,800,1000,1200].forEach((f,i)=>{o.frequency.setValueAtTime(f,n+i*.07)});v.gain.setValueAtTime(.12,n);v.gain.exponentialRampToValueAtTime(.01,n+.5);o.start(n);o.stop(n+.5);break}}catch(e){}}return{play:p,toggle:()=>{e=!e;return e},get on(){return e}}}();
+const SFX=(()=>{let c=null,e=!0;function g(){c=c||new(window.AudioContext||window.webkitAudioContext)();return c}function p(t){if(!e)return;try{const x=g(),o=x.createOscillator(),v=x.createGain();o.connect(v);v.connect(x.destination);const n=x.currentTime;switch(t){case'click':o.frequency.setValueAtTime(800,n);o.frequency.exponentialRampToValueAtTime(400,n+.08);v.gain.setValueAtTime(.12,n);v.gain.exponentialRampToValueAtTime(.01,n+.08);o.start(n);o.stop(n+.08);break;case'merge':o.type='triangle';o.frequency.setValueAtTime(400,n);o.frequency.exponentialRampToValueAtTime(1200,n+.2);v.gain.setValueAtTime(.18,n);v.gain.exponentialRampToValueAtTime(.01,n+.25);o.start(n);o.stop(n+.25);break;case'hit':o.type='sawtooth';o.frequency.setValueAtTime(200,n);o.frequency.exponentialRampToValueAtTime(60,n+.12);v.gain.setValueAtTime(.1,n);v.gain.exponentialRampToValueAtTime(.01,n+.12);o.start(n);o.stop(n+.12);break;case'kill':o.type='square';o.frequency.setValueAtTime(500,n);o.frequency.exponentialRampToValueAtTime(80,n+.3);v.gain.setValueAtTime(.12,n);v.gain.exponentialRampToValueAtTime(.01,n+.35);o.start(n);o.stop(n+.35);break;case'buy':o.type='sine';o.frequency.setValueAtTime(500,n);o.frequency.setValueAtTime(700,n+.08);o.frequency.setValueAtTime(900,n+.16);v.gain.setValueAtTime(.1,n);v.gain.exponentialRampToValueAtTime(.01,n+.25);o.start(n);o.stop(n+.25);break;case'err':o.type='square';o.frequency.setValueAtTime(180,n);o.frequency.setValueAtTime(130,n+.08);v.gain.setValueAtTime(.08,n);v.gain.exponentialRampToValueAtTime(.01,n+.15);o.start(n);o.stop(n+.15);break;case'pu':o.type='sine';o.frequency.setValueAtTime(400,n);o.frequency.exponentialRampToValueAtTime(1400,n+.25);v.gain.setValueAtTime(.12,n);v.gain.exponentialRampToValueAtTime(.01,n+.3);o.start(n);o.stop(n+.3);break;case'ach':o.type='sine';[523,659,784,1047].forEach((f,i)=>{o.frequency.setValueAtTime(f,n+i*.07)});v.gain.setValueAtTime(.12,n);v.gain.exponentialRampToValueAtTime(.01,n+.4);o.start(n);o.stop(n+.4);break;case'prestige':o.type='sine';[400,500,600,800,1000,1200].forEach((f,i)=>{o.frequency.setValueAtTime(f,n+i*.07)});v.gain.setValueAtTime(.12,n);v.gain.exponentialRampToValueAtTime(.01,n+.5);o.start(n);o.stop(n+.5);break}}catch(e){}}return{play:p,toggle:()=>{e=!e;return e},get on(){return e}}})();
 function vib(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
 
 // ===== DATA =====
@@ -361,6 +361,7 @@ const S={
   prestige:0,prestMult:1,lifetimeGold:0,
   playerHp:100,playerMaxHp:100,lastDmgTime:0,
   achDone:[],
+  dead:false,
   lastTick:Date.now(),
 };
 
@@ -408,17 +409,18 @@ const G={
     setInterval(()=>Save.save(),5000);
     setInterval(()=>this.puTick(),1000);
     setInterval(()=>{if(S.pu.automerge)this.autoMerge()},1000);
-    setInterval(()=>{if(S.autoClick>0&&S.enemy){for(let i=0;i<S.autoClick;i++)this.dealDmg(S.clickDps*S.dpsMult*S.prestMult);const ag=Math.max(1,Math.floor((1+S.dpsUpLv)*S.prestMult*S.autoClick*.5));S.gold+=ag;S.totalGold+=ag;S.lifetimeGold+=ag}},1000);
+    setInterval(()=>{if(S.dead)return;if(S.autoClick>0&&S.enemy){for(let i=0;i<S.autoClick;i++)this.dealDmg(S.clickDps*S.dpsMult*S.prestMult);const ag=Math.max(1,Math.floor((1+S.dpsUpLv)*S.prestMult*S.autoClick*.5));S.gold+=ag;S.totalGold+=ag;S.lifetimeGold+=ag}},1000);
     setInterval(()=>this.checkAch(),2000);
-    setInterval(()=>this.enemyAttack(),1800);
-    setInterval(()=>{if(S.playerHp<S.playerMaxHp){S.playerHp=Math.min(S.playerMaxHp,S.playerHp+S.playerMaxHp*.05);UI.updateHp()}},1000);
+    setInterval(()=>{if(!S.dead)this.enemyAttack()},1800);
+    setInterval(()=>{if(S.dead)return;if(S.playerHp<S.playerMaxHp){S.playerHp=Math.min(S.playerMaxHp,S.playerHp+S.playerMaxHp*.05);UI.updateHp()}},1000);
   },
 
   ensureGrid(){while(S.grid.length<S.gridSize)S.grid.push(null)},
   addCombo(){const p=S.combo;S.combo++;S.comboTimer=2.5;S.maxCombo=Math.max(S.maxCombo,S.combo);if(S.combo>=50)S.comboMult=5;else if(S.combo>=30)S.comboMult=3;else if(S.combo>=15)S.comboMult=2;else if(S.combo>=5)S.comboMult=1.5;else S.comboMult=1;if((p<5&&S.combo>=5)||(p<15&&S.combo>=15)||(p<30&&S.combo>=30)||(p<50&&S.combo>=50)){FX.banner(S.combo>=50?'⚡ MEGA x5!':S.combo>=30?'💥 x3!':S.combo>=15?'🔥🔥 x2!':'🔥 x1.5!')}},
 
   tick(){
-    const now=Date.now(),dt=(now-S.lastTick)/1000;S.lastTick=now;
+    if(S.dead)return;
+    const now=Date.now(),dt=Math.min((now-S.lastTick)/1000,2);S.lastTick=now;
     if(S.enemy&&S.dps>0){const d=S.dps*S.dpsMult*S.prestMult*dt*(S.pu.x2dps?2:1);this.dealDmg(d)}
     if(S.comboTimer>0){S.comboTimer-=dt;if(S.comboTimer<=0){S.combo=0;S.comboMult=1}}
     UI.updateRes();UI.updateEnemy();
@@ -433,7 +435,7 @@ const G={
     gain*=S.comboMult;if(S.pu.x2gold)gain*=2;gain=Math.floor(gain);
     S.gold+=gain;S.totalGold+=gain;S.lifetimeGold+=gain;
     let cd=S.clickDps*S.dpsMult*S.prestMult*S.comboMult*(S.pu.x2dps?2:1);
-    const cc=S.critCh+(S.pu.critup?.5:0),crit=Math.random()<cc;if(crit){cd*=S.critMult;if(S.combo>=8)FX.screenShake(4)}
+    const cc=S.critCh+(S.pu.critup?0.5:0),crit=Math.random()<cc;if(crit){cd*=S.critMult;if(S.combo>=8)FX.screenShake(4)}
     this.dealDmg(cd);
     const r=e.target.getBoundingClientRect(),x=e.clientX||(r.left+r.width/2),y=e.clientY||(r.top+r.height/2);
     FX.dmg(x,y,'+'+fmt(gain),crit,' gold');FX.ptc(x,y,crit?'#f97316':'#fbbf24',crit?10:5);
@@ -448,7 +450,7 @@ const G={
   clickEnemy(e){
     SFX.play('hit');vib(15);
     let d=S.clickDps*S.dpsMult*S.prestMult*S.comboMult*(S.pu.x2dps?2:1);
-    const cc=S.critCh+(S.pu.critup?.5:0),crit=Math.random()<cc;if(crit){d*=S.critMult;FX.screenShake(S.combo>=10?5:3)}
+    const cc=S.critCh+(S.pu.critup?0.5:0),crit=Math.random()<cc;if(crit){d*=S.critMult;FX.screenShake(S.combo>=10?5:3)}
     this.dealDmg(d);
     FX.dmg(e.clientX,e.clientY,fmt(Math.floor(d)),crit);FX.ptc(e.clientX,e.clientY,crit?'#f97316':'#ef4444',5);
     FX.shake(document.getElementById('e-spr'));FX.flash(document.getElementById('enemy-area'));
@@ -535,9 +537,9 @@ const G={
 
   shopAct(a){
     switch(a){
-      case'buyI1':if(S.gold>=50){S.gold-=50;this.addToGrid(1);SFX.play('buy')}else SFX.play('err');break;
-      case'buyI3':if(S.gold>=300){S.gold-=300;this.addToGrid(3);SFX.play('buy')}else SFX.play('err');break;
-      case'buyI5':if(S.gold>=2000){S.gold-=2000;this.addToGrid(5);SFX.play('buy')}else SFX.play('err');break;
+      case'buyI1':if(S.gold>=50){if(S.grid.includes(null)){S.gold-=50;this.addToGrid(1);SFX.play('buy')}else{SFX.play('err');FX.banner('📦 Grid Full!')}}else SFX.play('err');break;
+      case'buyI3':if(S.gold>=300){if(S.grid.includes(null)){S.gold-=300;this.addToGrid(3);SFX.play('buy')}else{SFX.play('err');FX.banner('📦 Grid Full!')}}else SFX.play('err');break;
+      case'buyI5':if(S.gold>=2000){if(S.grid.includes(null)){S.gold-=2000;this.addToGrid(5);SFX.play('buy')}else{SFX.play('err');FX.banner('📦 Grid Full!')}}else SFX.play('err');break;
       case'buyDPS':{const c=Math.floor(100*Math.pow(1.5,S.dpsUpLv));if(S.gold>=c){S.gold-=c;S.dpsUpLv++;this.recalcDps();SFX.play('buy')}else SFX.play('err')}break;
       case'buyGrid':if(S.gems>=2&&S.gridSize<30){S.gems-=2;S.gridSize++;S.gridUp++;S.grid.push(null);SFX.play('buy')}else SFX.play('err');break;
       case'buyCrit':if(S.gems>=3){S.gems-=3;S.critUp++;S.critCh=Math.min(.5,.05+S.critUp*.05);SFX.play('buy')}else SFX.play('err');break;
@@ -556,9 +558,9 @@ const G={
     this.ensureGrid();this.recalcDps();this.spawnEnemy();UI.renderGrid();UI.updateAll();Save.save();
   },
 
-  die(){document.getElementById('death').classList.add('on');document.getElementById('d-s').innerHTML=`Wave: <b>${S.wave}</b> | Kills: <b>${S.kills}</b><br>Gold earned: <b>${fmt(S.lifetimeGold)}</b><br>Boss kills: <b>${S.bossKills}</b> | Max combo: <b>${S.maxCombo}</b><br>Prestige: <b>${S.prestige}</b>`;LB.add('Player',S.wave*1000+S.kills);vib(100)},
+  die(){S.dead=!0;document.getElementById('death').classList.add('on');document.getElementById('d-s').innerHTML=`Wave: <b>${S.wave}</b> | Kills: <b>${S.kills}</b><br>Gold earned: <b>${fmt(S.lifetimeGold)}</b><br>Boss kills: <b>${S.bossKills}</b> | Max combo: <b>${S.maxCombo}</b><br>Prestige: <b>${S.prestige}</b>`;LB.add('Player',S.wave*1000+S.kills);vib(100)},
 
-  restart(){document.getElementById('death').classList.remove('on');Save.clear();const _g=S.gems,_gs=S.gridSize,_gu=S.gridUp,_au=S.autoClick,_cu=S.critUp,_cc=S.critCh;Object.assign(S,{gold:0,gems:_g,totalGold:0,wave:1,kills:0,grid:[],gridSize:_gs,sel:-1,dps:0,clickDps:1,dpsMult:1,critCh:_cc,critMult:2,combo:0,comboTimer:0,comboMult:1,maxCombo:0,enemy:null,eMaxHp:0,eHp:0,pu:{},dpsUpLv:0,gridUp:_gu,critUp:_cu,autoClick:_au,prestige:S.prestige,prestMult:S.prestMult,lifetimeGold:S.lifetimeGold,playerHp:100,playerMaxHp:100,lastDmgTime:0,achDone:S.achDone,bossKills:S.bossKills,lastTick:Date.now()});this.ensureGrid();S.grid[0]={lv:1};S.grid[1]={lv:1};S.grid[2]={lv:1};S.gold=20;this.recalcDps();this.spawnEnemy();UI.renderGrid();UI.updateAll();FX.banner('⚔️ Back in the fight!')},
+  restart(){S.dead=!1;document.getElementById('death').classList.remove('on');Save.clear();const _g=S.gems,_gs=S.gridSize,_gu=S.gridUp,_au=S.autoClick,_cu=S.critUp,_cc=S.critCh;Object.assign(S,{gold:0,gems:_g,totalGold:0,wave:1,kills:0,grid:[],gridSize:_gs,sel:-1,dps:0,clickDps:1,dpsMult:1,critCh:_cc,critMult:2,combo:0,comboTimer:0,comboMult:1,maxCombo:0,enemy:null,eMaxHp:0,eHp:0,pu:{},dpsUpLv:0,gridUp:_gu,critUp:_cu,autoClick:_au,prestige:S.prestige,prestMult:S.prestMult,lifetimeGold:S.lifetimeGold,playerHp:100,playerMaxHp:100,lastDmgTime:0,achDone:S.achDone,bossKills:S.bossKills,lastTick:Date.now()});this.ensureGrid();S.grid[0]={lv:1};S.grid[1]={lv:1};S.grid[2]={lv:1};S.gold=20;this.recalcDps();this.spawnEnemy();UI.renderGrid();UI.updateAll();FX.banner('⚔️ Back in the fight!')},
 
   checkAch(){for(const a of ACHS)if(!S.achDone.includes(a.id)&&a.check()){S.achDone.push(a.id);FX.ach(a.icon,a.name,a.desc);SFX.play('ach')}},
 
