@@ -438,7 +438,8 @@ const BGM=(()=>{
   }
   function stop(){playing=!1;clearInterval(interval)}
   function toggle(){playing?stop():start();return playing}
-  return{start,stop,toggle,get playing(){return playing}};
+  function setVolume(v){if(masterGain)masterGain.gain.value=Math.max(0,Math.min(1,v))*.1}
+  return{start,stop,toggle,setVolume,get playing(){return playing}};
 })();
 
 // ===== DATA =====
@@ -539,7 +540,8 @@ const S={
   milestonesDone:[],
   streak:0,lastPlayDate:null,
   totalClicks:0,totalKills:0,totalMerges:0,timePlayed:0,
-  bossShield:!1,bossPoison:0,bossPoisonTick:0,
+  bossShield:!1,bossShieldTimeout:null,bossPoison:0,bossPoisonTick:0,
+  passiveAutoHit:0,
   musicOn:!1,
   particlesOn:!0,
 };
@@ -550,7 +552,7 @@ const Save={
   save(){
     const d={...S};
     delete d.enemy;delete d.sel;delete d.comboTimer;
-    delete d.bossShield;delete d.bossPoison;delete d.bossPoisonTick;
+    delete d.bossShield;delete d.bossShieldTimeout;delete d.bossPoison;delete d.bossPoisonTick;
     d.lastSaveTime=Date.now();
     localStorage.setItem(this.k,JSON.stringify(d));
   },
@@ -563,7 +565,7 @@ const Save={
         S.milestonesDone=d.milestonesDone||[];
         S.sel=-1;S.combo=0;S.comboTimer=0;S.comboMult=1;
         S.lastTick=Date.now();S.playerHp=S.playerMaxHp||100;
-        S.bossShield=!1;S.bossPoison=0;S.bossPoisonTick=0;
+        S.bossShield=!1;S.bossShieldTimeout=null;S.bossPoison=0;S.bossPoisonTick=0;
         // Calculate offline progress
         if(d.lastSaveTime){
           const elapsed=(Date.now()-d.lastSaveTime)/1000;
@@ -688,14 +690,6 @@ const G={
     setInterval(()=>Save.save(),5000);
     setInterval(()=>this.puTick(),1000);
     setInterval(()=>{if(S.pu.automerge)this.autoMerge()},1000);
-    setInterval(()=>{
-      if(S.dead)return;
-      if(S.autoClick>0&&S.enemy){
-        for(let i=0;i<S.autoClick;i++)this.dealDmg(S.clickDps*S.dpsMult*S.prestMult);
-        const ag=Math.max(1,Math.floor((1+S.dpsUpLv)*S.prestMult*S.autoClick*.5));
-        S.gold+=ag;S.totalGold+=ag;S.lifetimeGold+=ag;
-      }
-    },1000);
     setInterval(()=>this.checkAch(),2000);
     setInterval(()=>{if(!S.dead)this.enemyAttack()},1800);
     setInterval(()=>{
@@ -709,6 +703,19 @@ const G={
     setInterval(()=>this.bossAbilityTick(),1000);
     // Track time played
     setInterval(()=>{if(!S.dead)S.timePlayed++},1000);
+    // Auto-hit from item passives
+    setInterval(()=>{
+      if(S.dead||!S.enemy)return;
+      const totalAuto=S.autoClick+S.passiveAutoHit;
+      if(totalAuto>0){
+        const hits=Math.floor(totalAuto);
+        for(let i=0;i<hits;i++)this.dealDmg(S.clickDps*S.dpsMult*S.prestMult*.5);
+        const ag=Math.max(1,Math.floor((1+S.dpsUpLv)*S.prestMult*hits*.3));
+        S.gold+=ag;S.totalGold+=ag;S.lifetimeGold+=ag;
+      }
+    },1000);
+    // Restore BGM if it was on
+    if(S.musicOn)BGM.start();
     // Auto-save streak
     S.lastPlayDate=new Date().toDateString();
   },
@@ -756,7 +763,7 @@ const G={
       const dmg=Math.max(1,Math.floor(S.playerMaxHp*.02));
       S.playerHp=Math.max(0,S.playerHp-dmg);
       S.bossPoison--;S.bossPoisonTick=now;
-      FX.dmg(window.innerWidth/2,window.innerHeight/2,'-'+dmg+' ☠️',false,' heal');
+      FX.dmg(window.innerWidth/2,window.innerHeight/2,'-'+dmg+' ☠️',false);
       UI.updateHp();
       if(S.playerHp<=0)G.die();
     }
@@ -772,9 +779,10 @@ const G={
           break;
         case'shield':
           S.bossShield=!0;
+          if(S.bossShieldTimeout)clearTimeout(S.bossShieldTimeout);
+          S.bossShieldTimeout=setTimeout(()=>{S.bossShield=!1;S.bossShieldTimeout=null;UI.updateBossAbilities()},3000);
           FX.banner('🛡️ BOSS SHIELD!');
           FX.toast('🛡️','Shield active! DPS reduced');
-          setTimeout(()=>{S.bossShield=!1;UI.updateBossAbilities()},3000);
           break;
         case'heal':
           const healAmt=Math.floor(S.eMaxHp*.15);
@@ -802,12 +810,12 @@ const G={
     this.addCombo();
     gain*=S.comboMult;if(S.pu.x2gold)gain*=2;
     // Streak bonus
-    if(S.streak>=3)gain*=1.2;else if(S.streak>=7)gain*=1.5;
-    gain=Math.floor(gain);
+    if(S.streak>=7)gain*=1.5;else if(S.streak>=3)gain*=1.2;
+    gain=Math.floor(gain*(S.passiveGoldMult||1));
     S.gold+=gain;S.totalGold+=gain;S.lifetimeGold+=gain;
     let cd=S.clickDps*S.dpsMult*S.prestMult*S.comboMult*(S.pu.x2dps?2:1);
     if(S.enemy.isBoss&&S.bossShield)cd*=0.3;
-    const cc=S.critCh+(S.pu.critup?0.5:0),crit=Math.random()<cc;
+    const cc=S.critCh+(S.passiveCritBonus||0)+(S.pu.critup?0.5:0),crit=Math.random()<cc;
     if(crit){cd*=S.critMult;SFX.play('crit');if(S.combo>=8)FX.screenShake(4)}
     this.dealDmg(cd);
     const r=e.target.getBoundingClientRect(),x=e.clientX||(r.left+r.width/2),y=e.clientY||(r.top+r.height/2);
@@ -831,7 +839,7 @@ const G={
       return;
     }
     let d=S.clickDps*S.dpsMult*S.prestMult*S.comboMult*(S.pu.x2dps?2:1);
-    const cc=S.critCh+(S.pu.critup?0.5:0),crit=Math.random()<cc;
+    const cc=S.critCh+(S.passiveCritBonus||0)+(S.pu.critup?0.5:0),crit=Math.random()<cc;
     if(crit){d*=S.critMult;SFX.play('crit');FX.screenShake(S.combo>=10?5:3)}
     this.dealDmg(d);
     if(crit&&d>S.clickDps*5)FX.bigCrit(e.clientX,e.clientY,'💥'+fmt(Math.floor(d)));
@@ -858,7 +866,7 @@ const G={
 
   killEnemy(){
     SFX.play('kill');const e=S.enemy;if(e.isBoss)vib(50);
-    let gr=e.gold*S.wave*S.prestMult*(S.pu.x2gold?2:1);
+    let gr=e.gold*S.wave*S.prestMult*(S.pu.x2gold?2:1)*(S.passiveGoldMult||1);
     if(S.streak>=7)gr=Math.floor(gr*1.5);else if(S.streak>=3)gr=Math.floor(gr*1.2);
     gr=Math.floor(gr);
     S.gold+=gr;S.totalGold+=gr;S.lifetimeGold+=gr;S.kills++;S.totalKills++;
@@ -868,7 +876,7 @@ const G={
     if(e.isBoss){
       S.bossKills++;const bg=Math.ceil(S.wave/5);S.gems+=bg;
       FX.banner('💎 BOSS DOWN! +'+bg+' Gems!');SFX.play('ach');
-      FX.victoryFlash();S.bossShield=!1;S.bossPoison=0;
+      FX.victoryFlash();S.bossShield=!1;S.bossShieldTimeout=null;S.bossPoison=0;
       Save.save();
     }
     if(Math.random()<.08)this.spawnPu();
@@ -912,7 +920,7 @@ const G={
     let hp=Math.floor(t.hp*(1+(S.wave-1)*.4)),gold=t.gold;
     if(isBoss){hp=Math.floor(hp*3);gold=Math.floor(gold*2.5)}
     S.enemy={name:isBoss?'💀 BOSS: '+t.name:t.name,icon:isBoss?'👹':t.icon,gold,isBoss};
-    S.eMaxHp=hp;S.eHp=hp;S.bossShield=!1;S.bossPoison=0;
+    S.eMaxHp=hp;S.eHp=hp;S.bossShield=!1;S.bossShieldTimeout=null;S.bossPoison=0;
     const ea=document.getElementById('enemy-area');
     if(isBoss){ea.classList.add('boss');FX.banner('💀 BOSS FIGHT!');SFX.play('boss')}else{ea.classList.remove('boss')}
     UI.updateEnemy();UI.updateBossAbilities();
@@ -935,9 +943,10 @@ const G={
     S.clickDps=Math.max(3,Math.floor(3+t*.2));
     S.passiveCritBonus=passiveCritBonus;
     S.passiveGoldMult=passiveGoldMult;
+    S.passiveAutoHit=passiveAutoHit;
   },
 
-  addToGrid(lv){const e=S.grid.findIndex(c=>c===null);if(e!==-1){S.grid[e]={lv};S.totalMerges++;this.recalcDps();UI.renderGrid();return!0}return!1},
+  addToGrid(lv){const e=S.grid.findIndex(c=>c===null);if(e!==-1){S.grid[e]={lv};S.totalMerges++;this.recalcDps();UI.renderGrid();const item=ITEMS[lv-1];if(item&&!S.achDone.includes('enc_'+lv)){S.achDone.push('enc_'+lv);FX.toast(item.icon,'Discovered: '+item.name+'!')}return!0}return!1},
 
   selectCell(i){
     if(S.sel===-1){if(S.grid[i]){S.sel=i;UI.renderGrid()}}
@@ -996,7 +1005,7 @@ const G={
     SFX.play('prestige');S.prestige++;S.prestMult=1+S.prestige*.25;S.gems+=r;
     S.gold=0;S.totalGold=0;S.wave=1;S.kills=0;S.grid=new Array(S.gridSize).fill(null);
     S.dpsUpLv=0;S.critUp=0;S.critCh=.05;S.pu={};S.combo=0;S.comboMult=1;S.playerHp=100;
-    S.bossShield=!1;S.bossPoison=0;
+    S.bossShield=!1;S.bossShieldTimeout=null;S.bossPoison=0;
     this.ensureGrid();this.recalcDps();this.spawnEnemy();UI.renderGrid();UI.updateAll();Save.save();
   },
 
@@ -1019,7 +1028,7 @@ const G={
       playerHp:100,playerMaxHp:100,lastDmgTime:0,achDone:S.achDone,bossKills:S.bossKills,
       lastTick:Date.now(),milestonesDone:S.milestonesDone,
       streak:_streak,lastPlayDate:_lastPlay,totalClicks:0,totalKills:0,totalMerges:0,timePlayed:0,
-      bossShield:!1,bossPoison:0,bossPoisonTick:0,musicOn:S.musicOn,particlesOn:S.particlesOn
+      bossShield:!1,bossShieldTimeout:null,bossPoison:0,bossPoisonTick:0,musicOn:S.musicOn,particlesOn:S.particlesOn
     });
     this.ensureGrid();S.grid[0]={lv:1};S.grid[1]={lv:1};S.grid[2]={lv:1};S.gold=20;
     this.recalcDps();this.spawnEnemy();UI.renderGrid();UI.updateAll();FX.banner('⚔️ Back in the fight!');
@@ -1197,7 +1206,8 @@ const UI={
       }
       case'set':ct.innerHTML=`
         <div class="st-row"><span>🔊 Sound</span><button class="tgl ${SFX.on?'on':''}" onclick="SFX.toggle();this.classList.toggle('on')"></button></div>
-        <div class="st-row"><span>🔊 Volume</span><input type="range" class="vol-slider" min="0" max="100" value="${Math.round(SFX.getVolume()*100)}" oninput="SFX.setVolume(this.value/100)"></div>
+        <div class="st-row"><span>🔊 SFX Volume</span><input type="range" class="vol-slider" min="0" max="100" value="${Math.round(SFX.getVolume()*100)}" oninput="SFX.setVolume(this.value/100)"></div>
+        <div class="st-row"><span>🎵 Music Volume</span><input type="range" class="vol-slider" min="0" max="100" value="6" oninput="BGM.setVolume(this.value/100)"></div>
         <div class="st-row"><span>🎵 Music</span><button class="tgl ${S.musicOn?'on':''}" id="bgm-toggle" onclick="S.musicOn=BGM.toggle();this.classList.toggle('on')"></button></div>
         <div class="st-row"><span>✨ Particles</span><button class="tgl ${S.particlesOn?'on':''}" onclick="S.particlesOn=!S.particlesOn;this.classList.toggle('on')"></button></div>
         <div class="st-row"><span>💾 Save</span><button class="act-btn" style="width:auto;height:auto;padding:5px 10px;font-size:11px" onclick="G.save();this.textContent='✅'">Save</button></div>
